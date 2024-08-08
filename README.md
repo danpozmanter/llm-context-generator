@@ -55,15 +55,10 @@ In this example:
 The contents of each matched file will be wrapped with markers indicating the filename, like so:
   
 ```
-===filename===
-
+=filename=
 <file  contents>
-
-===/filename===
-
-===filename 2===
-
+=/filename=
+=filename 2=
 <file  2  contents>
-
-===/filename 2===
+=/filename 2=
 ```

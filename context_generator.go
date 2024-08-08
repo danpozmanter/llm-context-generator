@@ -79,7 +79,7 @@ func generateOutputString(files []string) (string, error) {
 			return "", err
 		}
 		filename := filepath.Base(file)
-		outputString.WriteString(fmt.Sprintf("===%s===\n%s\n===/%s===\n", filename, string(content), filename))
+		outputString.WriteString(fmt.Sprintf("=%s=\n%s\n=/%s=\n", filename, string(content), filename))
 	}
 
 	return outputString.String(), nil
