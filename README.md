@@ -28,13 +28,13 @@ Run the context_generator with the required command line arguments:
 
 ### Arguments
 
--s or --source: Specifies the source directory to scan.
+-s: Specifies the source directory to scan.
 
--o or --output: Specifies the path to the output file where the concatenated contents will be stored.
+-o: Specifies the path to the output file where the concatenated contents will be stored.
 
--p or --patterns: Specifies the file extension patterns to match, separated by semicolons (;).
+-p: Specifies the file extension patterns to match, separated by semicolons (;).
 
--e or --excludes: Specifies the file path patterns to exclude, separated by semicolons (;).
+-e: Specifies the file path patterns to exclude, separated by semicolons (;).
 
 ### Example
 
