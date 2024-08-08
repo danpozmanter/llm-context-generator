@@ -15,14 +15,14 @@
 2. Clone the repository or download the `llm-context-generator` source code.
 3. Build the program:
 
-```ssh
+```sh
 go build -o context_generator context_generator.go
 ```
 
 ## Usage
 Run the context_generator with the required command line arguments:
 
-```ssh
+```sh
 ./context_generator -s <source directory> -o <output file> -p <patterns> -e <excludes>
 ```
 
