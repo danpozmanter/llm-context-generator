@@ -26,11 +26,19 @@ Run the context_generator with the required command line arguments:
 ./context_generator -s <source directory> -o <output file> -p <patterns> -e <excludes>
 ```
 
+or copy to the clipboard instead of an output file:
+
+```sh
+./context_generator -s <source directory> -c -p <patterns> -e <excludes>
+```
+
 ### Arguments
 
 -s: Specifies the source directory to scan.
 
 -o: Specifies the path to the output file where the concatenated contents will be stored.
+
+-c: Copies the output directly to the clipboard.
 
 -p: Specifies the file extension patterns to match, separated by semicolons (;).
 

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/atotto/clipboard" // Import the clipboard package
 )
 
 // Config struct to hold command line arguments
@@ -14,18 +16,20 @@ type Config struct {
 	OutputFile string
 	Patterns   []string
 	Excludes   []string
+	Clipboard  bool
 }
 
 // parseArgs parses the command line arguments
 func parseArgs() Config {
 	sourceDir := flag.String("s", "", "Source directory to scan")
-	outputFile := flag.String("o", "", "Output file path")
+	outputFile := flag.String("o", "", "Output file path (use -c to copy to clipboard)")
 	patterns := flag.String("p", "", "File extension patterns separated by ','")
 	excludes := flag.String("e", "", "File path patterns to exclude, separated by ','")
+	clipboardFlag := flag.Bool("c", false, "Copy output to clipboard instead of saving to a file")
 	flag.Parse()
 
-	if *sourceDir == "" || *outputFile == "" || *patterns == "" {
-		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes>")
+	if *sourceDir == "" || *patterns == "" || (*outputFile == "" && !*clipboardFlag) {
+		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes> [-c to copy to clipboard]")
 		os.Exit(1)
 	}
 
@@ -39,6 +43,7 @@ func parseArgs() Config {
 		OutputFile: *outputFile,
 		Patterns:   strings.Split(*patterns, ","),
 		Excludes:   excludeList,
+		Clipboard:  *clipboardFlag,
 	}
 }
 
@@ -90,6 +95,11 @@ func writeOutputToFile(outputFile string, outputString string) error {
 	return os.WriteFile(outputFile, []byte(outputString), 0644)
 }
 
+// writeOutputToClipboard copies the generated output string to the clipboard
+func writeOutputToClipboard(outputString string) error {
+	return clipboard.WriteAll(outputString)
+}
+
 func main() {
 	// Parse command line arguments
 	config := parseArgs()
@@ -115,12 +125,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Write the output string to the output file
-	err = writeOutputToFile(config.OutputFile, outputString)
-	if err != nil {
-		fmt.Println("Error writing to output file:", err)
-		os.Exit(1)
+	// Write the output string either to a file or to the clipboard
+	if config.Clipboard {
+		err = writeOutputToClipboard(outputString)
+		if err != nil {
+			fmt.Println("Error copying to clipboard:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Output copied to clipboard")
+	} else {
+		err = writeOutputToFile(config.OutputFile, outputString)
+		if err != nil {
+			fmt.Println("Error writing to output file:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Output written to", config.OutputFile)
 	}
-
-	fmt.Println("Output written to", config.OutputFile)
 }
