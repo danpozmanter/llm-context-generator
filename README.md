@@ -7,7 +7,7 @@
 
 - Recursively scans a specified source directory.
 - Filters files based on provided file extension patterns.
-- Concatenates the contents of matched files into a single output file with a clear structure for each file's content.
+- Concatenates the contents of matched files onto the clipboard or into an output file.
 - Easy to use with command line arguments.
 
 ## Installation
