@@ -91,9 +91,12 @@ func shouldBeExcluded(path string, excludes map[string]struct{}) bool {
 }
 
 func isPatternMatched(fileName string, patterns map[string]struct{}) bool {
-	ext := strings.TrimPrefix(filepath.Ext(fileName), ".")
-	_, matched := patterns[ext]
-	return matched
+	for pattern := range patterns {
+		if strings.Contains(fileName, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 // generateOutputString creates the output string from the collected files
