@@ -161,10 +161,10 @@ func main() {
 	}
 
 	target := "clipboard"
-	if config.Console {
+	switch {
+	case config.Console:
 		target = "console"
-	}
-	if config.OutputFile != "" {
+	case config.OutputFile != "":
 		target = config.OutputFile
 	}
 	fmt.Printf("Output successfully written to: %s\n", target)
