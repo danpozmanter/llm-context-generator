@@ -20,16 +20,22 @@ go build -o context_generator context_generator.go
 ```
 
 ## Usage
-Run the context_generator with the required command line arguments:
+Run the context_generator with the required argument only, filename patterns to match. This writes to the clipboard by default, using the current directory.
+
+```sh
+./context_generator -p <patterns>
+```
+
+Or output to the console:
+
+```sh
+./context_generator -p <patterns> -c
+```
+
+Alternatively write to an output file, and specify the source directory as well as patterns to exclude:
 
 ```sh
 ./context_generator -s <source directory> -o <output file> -p <patterns> -e <excludes>
-```
-
-or copy to the clipboard instead of an output file:
-
-```sh
-./context_generator -s <source directory> -c -p <patterns> -e <excludes>
 ```
 
 ### Arguments
@@ -38,7 +44,7 @@ or copy to the clipboard instead of an output file:
 
 -o: Specifies the path to the output file where the concatenated contents will be stored.
 
--c: Copies the output directly to the clipboard.
+-c: Output the content to the console.
 
 -p: Specifies the file extension patterns to match, separated by semicolons (;).
 

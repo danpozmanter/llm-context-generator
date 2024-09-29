@@ -14,33 +14,44 @@ import (
 type Config struct {
 	SourceDir  string
 	OutputFile string
+	Console    bool
 	Patterns   map[string]struct{}
 	Excludes   map[string]struct{}
 	Clipboard  bool
 }
 
+type ClipboardWriter func(string) error
+
+// Helper function to convert comma-separated strings into a map
+func toMap(list string) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, item := range strings.Split(list, ",") {
+		if item != "" {
+			m[item] = struct{}{}
+		}
+	}
+	return m
+}
+
 // parseArgs parses the command line arguments
 func parseArgs() Config {
-	sourceDir := flag.String("s", "", "Source directory to scan")
-	outputFile := flag.String("o", "", "Output file path (use -c to copy to clipboard)")
+	sourceDir := flag.String("s", ".", "Source directory to scan (default: current directory)")
+	outputFile := flag.String("o", "", "Output file path (if specified, output will not go to the clipboard or console)")
 	patterns := flag.String("p", "", "File extension patterns separated by ','")
 	excludes := flag.String("e", "", "File path patterns to exclude, separated by ','")
-	clipboardFlag := flag.Bool("c", false, "Copy output to clipboard instead of saving to a file")
+	consoleFlag := flag.Bool("c", false, "Write output to the console instead of the clipboard (default: false)")
+	clipboardFlag := true
+
 	flag.Parse()
 
-	if *sourceDir == "" || *patterns == "" || (*outputFile == "" && !*clipboardFlag) {
-		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes> [-c to copy to clipboard]")
+	// Check for required arguments
+	if *patterns == "" {
+		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes> [-c to copy to clipboard (default enabled)]")
 		os.Exit(1)
 	}
 
-	toMap := func(list string) map[string]struct{} {
-		m := make(map[string]struct{})
-		for _, item := range strings.Split(list, ",") {
-			if item != "" {
-				m[item] = struct{}{}
-			}
-		}
-		return m
+	if *outputFile != "" || *consoleFlag {
+		clipboardFlag = false
 	}
 
 	return Config{
@@ -48,7 +59,8 @@ func parseArgs() Config {
 		OutputFile: *outputFile,
 		Patterns:   toMap(*patterns),
 		Excludes:   toMap(*excludes),
-		Clipboard:  *clipboardFlag,
+		Console:    *consoleFlag,
+		Clipboard:  clipboardFlag,
 	}
 }
 
@@ -98,9 +110,13 @@ func generateOutputString(files []string) (string, error) {
 }
 
 // writeOutput handles both file and clipboard output
-func writeOutput(outputFile string, outputString string, toClipboard bool) error {
+func writeOutput(outputString string, outputFile string, toConsole bool, toClipboard bool, writeToClipboard ClipboardWriter) error {
+	if toConsole {
+		println(outputString)
+		return nil
+	}
 	if toClipboard {
-		return clipboard.WriteAll(outputString)
+		return writeToClipboard(outputString)
 	}
 	return os.WriteFile(outputFile, []byte(outputString), 0644)
 }
@@ -136,13 +152,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := writeOutput(config.OutputFile, outputString, config.Clipboard); err != nil {
+	if err := writeOutput(outputString, config.OutputFile, config.Console, config.Clipboard, clipboard.WriteAll); err != nil {
 		fmt.Println("Error writing output:", err)
 		os.Exit(1)
 	}
 
 	target := "clipboard"
-	if !config.Clipboard {
+	if config.Console {
+		target = "console"
+	}
+	if config.OutputFile != "" {
 		target = config.OutputFile
 	}
 	fmt.Printf("Output successfully written to: %s\n", target)
