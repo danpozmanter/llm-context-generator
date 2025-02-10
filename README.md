@@ -3,6 +3,8 @@
 
 `llm-context-generator` is a Go program designed to scan a directory recursively for files matching specified file extension patterns, and concatenate their contents into a single text file. This makes it easy to feed relevant files from a project into a large language model (LLM) context.
 
+[![Tests Passing](https://github.com/danpozmanter/llm-context-generator/actions/workflows/test.yml/badge.svg)](https://github.com/danpozmanter/llm-context-generator/actions)
+
 ## Features
 
 - Recursively scans a specified source directory.
