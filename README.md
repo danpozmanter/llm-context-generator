@@ -18,26 +18,26 @@
 3. Build the program:
 
 ```sh
-go build -o context_generator context_generator.go
+make build
 ```
 
 ## Usage
 Run the context_generator with the required argument only, filename patterns to match. This writes to the clipboard by default, using the current directory.
 
 ```sh
-./context_generator -p <patterns>
+./context-generator -p <patterns>
 ```
 
 Or output to the console:
 
 ```sh
-./context_generator -p <patterns> -c
+./context-generator -p <patterns> -c
 ```
 
 Alternatively write to an output file, and specify the source directory as well as patterns to exclude:
 
 ```sh
-./context_generator -s <source directory> -o <output file> -p <patterns> -e <excludes>
+./context-generator -s <source directory> -o <output file> -p <patterns> -e <excludes>
 ```
 
 ### Arguments
@@ -55,7 +55,7 @@ Alternatively write to an output file, and specify the source directory as well 
 ### Example
 
 ```sh
-./context_generator -s /path/to/source -o /path/to/output.txt -p "*.java|*.yaml|*.kts" -e "test;example"
+./context-generator -s /path/to/source -o /path/to/output.txt -p "*.java|*.yaml|*.kts" -e "test;example"
 ```
 
 In this example:
