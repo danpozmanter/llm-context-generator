@@ -48,28 +48,28 @@ Alternatively write to an output file, and specify the source directory as well 
 
 -c: Output the content to the console.
 
--p: Specifies the file extension patterns to match, separated by semicolons (;).
+-p: Specifies the file extension patterns to match as a regular expression (regex).
 
 -e: Specifies the file path patterns to exclude, separated by semicolons (;).
 
 ### Example
 
 ```sh
-./context_generator -s /path/to/source -o /path/to/output.txt -p "java;yaml;kts" -e "test;example"
+./context_generator -s /path/to/source -o /path/to/output.txt -p "*.java|*.yaml|*.kts" -e "test;example"
 ```
-  
+
 In this example:
 
 * The program will scan /path/to/source directory recursively.
 * It will match files with extensions .java, .yaml, and .kts.
 * It will exclude files with paths containing test or example.
 * The contents of matched files will be concatenated into /path/to/output.txt.
- 
+
 
 ### Output Format
 
 The contents of each matched file will be wrapped with markers indicating the filename, like so:
-  
+
 ```
 =filename=
 <file  contents>

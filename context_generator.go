@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -15,30 +16,45 @@ type Config struct {
 	SourceDir  string
 	OutputFile string
 	Console    bool
-	Patterns   map[string]struct{}
-	Excludes   map[string]struct{}
+	Patterns   []*regexp.Regexp
+	Excludes   []*regexp.Regexp
 	Clipboard  bool
 }
 
 type ClipboardWriter func(string) error
 
-// Helper function to convert comma-separated strings into a map
-func toMap(list string) map[string]struct{} {
-	m := make(map[string]struct{})
-	for _, item := range strings.Split(list, ",") {
-		if item != "" {
-			m[item] = struct{}{}
-		}
+// Helper function to convert comma-separated patterns into regex slices
+func compilePatterns(patterns string) ([]*regexp.Regexp, error) {
+	var result []*regexp.Regexp
+	if patterns == "" {
+		return result, nil
 	}
-	return m
+
+	for _, pattern := range strings.Split(patterns, ",") {
+		if pattern == "" {
+			continue
+		}
+		// Convert glob patterns to regex
+		// Replace * with .* and escape dots
+		pattern = strings.ReplaceAll(pattern, ".", "\\.")
+		pattern = strings.ReplaceAll(pattern, "*", ".*")
+		pattern = "^" + pattern + "$" // Ensure full match
+
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("invalid pattern '%s': %v", pattern, err)
+		}
+		result = append(result, re)
+	}
+	return result, nil
 }
 
 // parseArgs parses the command line arguments
-func parseArgs() Config {
+func parseArgs() (Config, error) {
 	sourceDir := flag.String("s", ".", "Source directory to scan (default: current directory)")
 	outputFile := flag.String("o", "", "Output file path (if specified, output will not go to the clipboard or console)")
-	patterns := flag.String("p", "", "File extension patterns separated by ','")
-	excludes := flag.String("e", "", "File path patterns to exclude, separated by ','")
+	patterns := flag.String("p", "", "File extension patterns separated by ',' (e.g., '*.go,*.md')")
+	excludes := flag.String("e", "", "File path patterns to exclude, separated by ',' (e.g., '*.test.go,vendor/*')")
 	consoleFlag := flag.Bool("c", false, "Write output to the console instead of the clipboard (default: false)")
 	clipboardFlag := true
 
@@ -46,8 +62,17 @@ func parseArgs() Config {
 
 	// Check for required arguments
 	if *patterns == "" {
-		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes> [-c to copy to clipboard (default enabled)]")
-		os.Exit(1)
+		return Config{}, fmt.Errorf("missing required flag: -p <patterns>")
+	}
+
+	compiledPatterns, err := compilePatterns(*patterns)
+	if err != nil {
+		return Config{}, err
+	}
+
+	compiledExcludes, err := compilePatterns(*excludes)
+	if err != nil {
+		return Config{}, err
 	}
 
 	if *outputFile != "" || *consoleFlag {
@@ -57,15 +82,15 @@ func parseArgs() Config {
 	return Config{
 		SourceDir:  *sourceDir,
 		OutputFile: *outputFile,
-		Patterns:   toMap(*patterns),
-		Excludes:   toMap(*excludes),
+		Patterns:   compiledPatterns,
+		Excludes:   compiledExcludes,
 		Console:    *consoleFlag,
 		Clipboard:  clipboardFlag,
-	}
+	}, nil
 }
 
 // walkDir recursively walks through the source directory and collects matching files
-func walkDir(sourceDir string, patterns, excludes map[string]struct{}) ([]string, error) {
+func walkDir(sourceDir string, patterns []*regexp.Regexp, excludes []*regexp.Regexp) ([]string, error) {
 	var files []string
 	err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
@@ -81,22 +106,22 @@ func walkDir(sourceDir string, patterns, excludes map[string]struct{}) ([]string
 }
 
 // Helper functions for exclusion and pattern matching
-func shouldBeExcluded(path string, excludes map[string]struct{}) bool {
-	for exclude := range excludes {
-		if strings.Contains(path, exclude) {
+func shouldBeExcluded(path string, excludes []*regexp.Regexp) bool {
+	for _, exclude := range excludes {
+		if exclude.MatchString(path) {
 			return true
 		}
 	}
 	return false
 }
 
-func isPatternMatched(fileName string, patterns map[string]struct{}) bool {
-	for pattern := range patterns {
-		if strings.Contains(fileName, pattern) {
+func isPatternMatched(fileName string, patterns []*regexp.Regexp) bool {
+	for _, pattern := range patterns {
+		if pattern.MatchString(fileName) {
 			return true
 		}
 	}
-	return false
+	return len(patterns) == 0 // If no patterns specified, match all
 }
 
 // generateOutputString creates the output string from the collected files
@@ -115,7 +140,7 @@ func generateOutputString(files []string) (string, error) {
 // writeOutput handles both file and clipboard output
 func writeOutput(outputString string, outputFile string, toConsole bool, toClipboard bool, writeToClipboard ClipboardWriter) error {
 	if toConsole {
-		println(outputString)
+		fmt.Println(outputString)
 		return nil
 	}
 	if toClipboard {
@@ -124,19 +149,24 @@ func writeOutput(outputString string, outputFile string, toConsole bool, toClipb
 	return os.WriteFile(outputFile, []byte(outputString), 0644)
 }
 
-// printPatterns prints patterns from a map with a given message
-func printPatterns(message string, patterns map[string]struct{}) {
-	fmt.Printf("%s: ", message)
-	for pattern := range patterns {
-		fmt.Printf("%s ", pattern)
+// printPatterns prints patterns from a slice with a given message
+func printPatterns(message string, patterns []*regexp.Regexp) {
+	patternStrs := make([]string, len(patterns))
+	for i, p := range patterns {
+		patternStrs[i] = p.String()
 	}
-	fmt.Println()
+	fmt.Printf("%s: %s\n", message, strings.Join(patternStrs, ", "))
 }
 
 func main() {
-	config := parseArgs()
+	config, err := parseArgs()
+	if err != nil {
+		fmt.Printf("Error parsing arguments: %v\n", err)
+		fmt.Println("Usage: -s <source directory> -o <output file> -p <patterns> -e <excludes> [-c to write to console]")
+		os.Exit(1)
+	}
 
-	// Echo back the choices by directly iterating over the map keys
+	// Echo back the choices
 	fmt.Printf("Scanning source directory %s\n", config.SourceDir)
 	printPatterns("Matching patterns", config.Patterns)
 	if len(config.Excludes) > 0 {
