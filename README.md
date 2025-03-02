@@ -65,6 +65,14 @@ In this example:
 * It will exclude files with paths containing test or example.
 * The contents of matched files will be concatenated into /path/to/output.txt.
 
+Note: For some file patterns, you may want to include '$' to ensure a greedier match does not occur:
+
+
+```sh
+./context-generator -s /path/to/source -o /path/to/output.txt -p "*.py$"
+```
+
+This will match on *.py files, but exclude *.pyc files.
 
 ### Output Format
 
